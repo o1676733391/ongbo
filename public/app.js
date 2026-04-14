@@ -45,6 +45,36 @@ function setStatus(message) {
   statusText.textContent = message;
 }
 
+function getMicErrorMessage(err) {
+  const name = err && err.name ? err.name : "UnknownError";
+
+  if (!window.isSecureContext) {
+    return "Microphone requires HTTPS on mobile. Open the deployed HTTPS URL, not local http.";
+  }
+
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+    return "Microphone permission denied. Enable mic permission for this site in browser settings and reload.";
+  }
+
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+    return "No microphone detected on this device.";
+  }
+
+  if (name === "NotReadableError" || name === "TrackStartError") {
+    return "Microphone is busy in another app. Close other apps using mic and try again.";
+  }
+
+  if (name === "OverconstrainedError" || name === "ConstraintNotSatisfiedError") {
+    return "This device cannot satisfy microphone constraints.";
+  }
+
+  if (name === "SecurityError") {
+    return "Browser blocked microphone for security reasons. Try Chrome/Safari directly, not in-app browser.";
+  }
+
+  return `Cannot use microphone (${name}). Check browser permission and try again.`;
+}
+
 function setSpeaking(el, speaking) {
   el.classList.toggle("speaking", speaking);
 
@@ -92,6 +122,14 @@ function monitorStreamLevel(stream, element, threshold = 0.045) {
 }
 
 async function ensureMedia() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error("This browser does not support microphone access.");
+  }
+
+  if (!window.isSecureContext) {
+    throw new Error("Microphone requires HTTPS (or localhost).");
+  }
+
   if (!localStream) {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     if (localLevelChecker) {
@@ -274,7 +312,7 @@ async function joinRoom() {
       joinBtn.disabled = false;
     };
   } catch (err) {
-    setStatus(`Cannot use microphone: ${err.message}`);
+    setStatus(getMicErrorMessage(err));
     joinBtn.disabled = false;
   }
 }
