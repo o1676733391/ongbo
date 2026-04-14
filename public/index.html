@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cup Phone Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bricolage+Grotesque:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="header">
+        <p class="kicker">Two people only</p>
+        <h1>Cup Phone</h1>
+        <p class="subtitle">A tiny voice room inspired by string-and-cup phones.</p>
+      </section>
+
+      <section class="controls">
+        <label for="roomInput">Room code</label>
+        <div class="control-row">
+          <input id="roomInput" type="text" placeholder="ex: backyard-01" />
+          <button id="joinBtn">Join</button>
+          <button id="copyLinkBtn" class="ghost">Copy Invite</button>
+        </div>
+        <p id="status" class="status">Enter a room code and press Join.</p>
+      </section>
+
+      <section class="phone-stage" aria-label="Cup phone stage">
+        <img
+          class="stage-illustration"
+          src="assets/cup.png"
+          alt="Two kids using a cup phone"
+        />
+
+        <div id="stringLine" class="string-line"></div>
+
+        <div id="localCup" class="voice-node" data-role="local"></div>
+
+        <div id="remoteCup" class="voice-node" data-role="remote"></div>
+
+        <p id="localVoiceStatus" class="voice-status local">Voice: quiet</p>
+        <p id="remoteVoiceStatus" class="voice-status remote">Voice: quiet</p>
+      </section>
+
+      <audio id="remoteAudio" autoplay playsinline></audio>
+    </main>
+
+    <script src="app-config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

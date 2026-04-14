@@ -1,0 +1,265 @@
+:root {
+  --bg-1: #f9eee0;
+  --bg-2: #f4c7a0;
+  --ink: #1f1a17;
+  --accent: #f05d23;
+  --accent-2: #246eb9;
+  --soft: #fefaf4;
+  --shadow: rgba(26, 20, 16, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 20% 20%, #ffeccf 0%, transparent 30%),
+    radial-gradient(circle at 80% 80%, #ffd6af 0%, transparent 35%),
+    linear-gradient(165deg, var(--bg-1), var(--bg-2));
+}
+
+.app-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 2rem 1.2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  font-family: "Bricolage Grotesque", sans-serif;
+  line-height: 1;
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: #704d2a;
+  font-size: 0.78rem;
+}
+
+.subtitle {
+  margin: 0.4rem 0 0;
+  max-width: 44ch;
+  font-weight: 500;
+}
+
+.controls {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(6px);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px var(--shadow);
+  padding: 1rem;
+}
+
+.controls label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.control-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.5rem;
+}
+
+input,
+button {
+  border-radius: 10px;
+  border: 2px solid transparent;
+  font: inherit;
+}
+
+input {
+  width: 100%;
+  padding: 0.72rem 0.85rem;
+  border-color: #d3b69f;
+  background: var(--soft);
+}
+
+button {
+  padding: 0.7rem 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+}
+
+button.ghost {
+  background: var(--accent-2);
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.status {
+  margin: 0.7rem 0 0;
+  min-height: 1.2rem;
+  font-size: 0.95rem;
+}
+
+.phone-stage {
+  margin-top: 0.4rem;
+  position: relative;
+  min-height: 380px;
+  border-radius: 20px;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 244, 228, 0.75));
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 14px 30px rgba(95, 54, 24, 0.18);
+  overflow: hidden;
+}
+
+.stage-illustration {
+  display: block;
+  width: min(100%, 760px);
+  max-height: 540px;
+  object-fit: contain;
+  margin: 0 auto;
+  filter: drop-shadow(0 10px 16px rgba(62, 36, 17, 0.2));
+}
+
+.string-line {
+  display: none;
+  position: absolute;
+  left: 35.5%;
+  top: 38%;
+  height: 3px;
+  width: 28%;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    90deg,
+    #6e5a4a 0,
+    #6e5a4a 12px,
+    #96775f 12px,
+    #96775f 24px
+  );
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform-origin: center;
+}
+
+.voice-node {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+
+.voice-node[data-role="local"] {
+  left: 33%;
+  top: 38%;
+}
+
+.voice-node[data-role="remote"] {
+  left: 65.5%;
+  top: 38%;
+}
+
+.voice-status {
+  position: absolute;
+  bottom: 4%;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(135, 98, 61, 0.28);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #4c3b2c;
+  box-shadow: 0 4px 10px rgba(32, 20, 10, 0.14);
+}
+
+.voice-status.local {
+  left: 17%;
+}
+
+.voice-status.remote {
+  right: 12%;
+}
+
+.voice-status.speaking {
+  color: #9f2600;
+  background: rgba(255, 242, 231, 0.96);
+  border-color: rgba(196, 108, 38, 0.55);
+}
+
+.voice-node.speaking {
+  animation: none;
+  filter: none;
+}
+
+.string-line.speaking {
+  animation: tighten 220ms ease-in-out infinite alternate;
+}
+
+@keyframes wobble {
+  from {
+    transform: rotate(-2.5deg) translateY(-3px);
+  }
+  to {
+    transform: rotate(2.5deg) translateY(0);
+  }
+}
+
+@keyframes tighten {
+  from {
+    transform: scaleY(1) rotate(-0.6deg);
+  }
+  to {
+    transform: scaleY(1.35) rotate(0.6deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .control-row {
+    grid-template-columns: 1fr;
+  }
+
+  .phone-stage {
+    min-height: 320px;
+    padding: 0.7rem;
+  }
+
+  .string-line {
+    height: 2px;
+    width: 29%;
+    left: 35%;
+    top: 37.5%;
+  }
+
+  .string-line.speaking {
+    animation: tighten 220ms ease-in-out infinite alternate;
+  }
+
+  .voice-status {
+    bottom: 3.5%;
+    font-size: 0.65rem;
+    padding: 0.18rem 0.42rem;
+  }
+
+  .voice-status.local {
+    left: 9%;
+  }
+
+  .voice-status.remote {
+    right: 8%;
+  }
+}

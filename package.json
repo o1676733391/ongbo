@@ -1,0 +1,13 @@
+{
+  "name": "cup-phone-chat",
+  "version": "1.0.0",
+  "description": "Simple 2-person cup-phone inspired voice chat web app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  }
+}
