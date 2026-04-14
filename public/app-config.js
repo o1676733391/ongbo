@@ -3,5 +3,5 @@ window.APP_CONFIG = window.APP_CONFIG || {
   // Examples:
   // SIGNAL_SERVER_URL: "wss://your-railway-service.up.railway.app"
   // SIGNAL_SERVER_URL: "https://your-railway-service.up.railway.app"
-  SIGNAL_SERVER_URL: ""
+  SIGNAL_SERVER_URL: "wss://ongbo-production.up.railway.app"
 };
