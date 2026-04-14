@@ -20,6 +20,8 @@ let localStream;
 let peer;
 let localLevelChecker;
 let remoteLevelChecker;
+let disconnectGraceTimer;
+let pendingRemoteCandidates = [];
 let roomId;
 let iceServers = [
   { urls: "stun:stun.l.google.com:19302" },
@@ -39,6 +41,13 @@ async function loadRtcConfig() {
   } catch {
     // Keep default STUN config when endpoint is unavailable.
   }
+}
+
+function hasTurnServer() {
+  return iceServers.some((server) => {
+    const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+    return urls.some((url) => typeof url === "string" && url.trim().startsWith("turn:"));
+  });
 }
 
 function setStatus(message) {
@@ -121,6 +130,60 @@ function monitorStreamLevel(stream, element, threshold = 0.045) {
   };
 }
 
+function clearDisconnectGraceTimer() {
+  if (disconnectGraceTimer) {
+    clearTimeout(disconnectGraceTimer);
+    disconnectGraceTimer = null;
+  }
+}
+
+function resetPeerConnection() {
+  clearDisconnectGraceTimer();
+
+  if (peer) {
+    peer.onicecandidate = null;
+    peer.ontrack = null;
+    peer.onconnectionstatechange = null;
+    if (peer.signalingState !== "closed") {
+      peer.close();
+    }
+    peer = null;
+  }
+
+  if (remoteLevelChecker) {
+    remoteLevelChecker();
+    remoteLevelChecker = null;
+  }
+
+  remoteAudio.srcObject = null;
+  setSpeaking(remoteCup, false);
+  pendingRemoteCandidates = [];
+}
+
+async function applyCandidate(candidate) {
+  if (!peer) {
+    return;
+  }
+  try {
+    await peer.addIceCandidate(new RTCIceCandidate(candidate));
+  } catch {
+    // Ignore invalid or stale candidate errors during reconnect.
+  }
+}
+
+async function flushPendingCandidates() {
+  if (!peer || !peer.remoteDescription) {
+    return;
+  }
+
+  const queued = pendingRemoteCandidates;
+  pendingRemoteCandidates = [];
+
+  for (const candidate of queued) {
+    await applyCandidate(candidate);
+  }
+}
+
 async function ensureMedia() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     throw new Error("This browser does not support microphone access.");
@@ -161,6 +224,9 @@ async function createPeerConnection() {
   peer.ontrack = (event) => {
     const [streamFromPeer] = event.streams;
     remoteAudio.srcObject = streamFromPeer;
+    remoteAudio.play().catch(() => {
+      // Playback can be blocked by browser autoplay policies.
+    });
 
     if (remoteLevelChecker) {
       remoteLevelChecker();
@@ -170,11 +236,31 @@ async function createPeerConnection() {
 
   peer.onconnectionstatechange = () => {
     if (peer.connectionState === "connected") {
+      clearDisconnectGraceTimer();
       setStatus("Connected. Start talking into your cup.");
+      return;
     }
 
-    if (["failed", "disconnected", "closed"].includes(peer.connectionState)) {
-      setStatus("Connection ended. Join again to reconnect.");
+    if (peer.connectionState === "disconnected") {
+      setStatus("Connection is unstable. Trying to recover...");
+      clearDisconnectGraceTimer();
+      disconnectGraceTimer = setTimeout(() => {
+        if (peer && ["disconnected", "failed"].includes(peer.connectionState)) {
+          resetPeerConnection();
+          setStatus("Connection ended. Join again to reconnect.");
+        }
+      }, 7000);
+      return;
+    }
+
+    if (["failed", "closed"].includes(peer.connectionState)) {
+      resetPeerConnection();
+      joinBtn.disabled = false;
+      setStatus(
+        hasTurnServer()
+          ? "Connection ended. Join again to reconnect."
+          : "Connection ended. Join again to reconnect. TURN server may be required for your network."
+      );
     }
   };
 
@@ -204,6 +290,7 @@ function getSignalUrl() {
 
 async function handleSignalMessage(message) {
   if (message.type === "joined") {
+    joinBtn.disabled = false;
     if (message.users > 2) {
       setStatus("Room already has 2 people. Try another room.");
       return;
@@ -227,6 +314,7 @@ async function handleSignalMessage(message) {
   if (message.type === "offer") {
     const pc = await createPeerConnection();
     await pc.setRemoteDescription(new RTCSessionDescription(message.offer));
+    await flushPendingCandidates();
 
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
@@ -237,24 +325,23 @@ async function handleSignalMessage(message) {
   if (message.type === "answer") {
     if (peer) {
       await peer.setRemoteDescription(new RTCSessionDescription(message.answer));
+      await flushPendingCandidates();
     }
     return;
   }
 
   if (message.type === "ice-candidate") {
-    if (peer) {
-      await peer.addIceCandidate(new RTCIceCandidate(message.candidate));
+    if (!peer || !peer.remoteDescription) {
+      pendingRemoteCandidates.push(message.candidate);
+      return;
     }
+    await applyCandidate(message.candidate);
     return;
   }
 
   if (message.type === "peer-left") {
     setStatus("Your friend left. Stay here or rejoin later.");
-    if (remoteLevelChecker) {
-      remoteLevelChecker();
-      remoteLevelChecker = null;
-    }
-    remoteAudio.srcObject = null;
+    resetPeerConnection();
     return;
   }
 
@@ -274,6 +361,7 @@ async function joinRoom() {
   setStatus("Requesting microphone and joining room...");
 
   try {
+    resetPeerConnection();
     await ensureMedia();
     await loadRtcConfig();
 
@@ -302,6 +390,7 @@ async function joinRoom() {
 
     socket.onclose = () => {
       joinBtn.disabled = false;
+      resetPeerConnection();
       if (!remoteAudio.srcObject) {
         setStatus("Disconnected from server.");
       }
